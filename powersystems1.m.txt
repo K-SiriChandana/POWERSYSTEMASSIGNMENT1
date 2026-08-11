@@ -1,0 +1,92 @@
+clc;
+clear;
+
+fprintf('============================================================\n');
+fprintf('       ECONOMIC SELECTION OF TWO GENERATING PLANTS          \n');
+fprintf('============================================================\n');
+
+%% INPUT PARAMETERS
+P  = input('\nEnter Maximum Demand (P in MW): ');
+LF = input('Enter Load Factor (x in %): ');
+
+fprintf('\n--- Plant 1 Costs ---\n');
+C1 = input('Enter Fixed Cost C1 (Rs/kW/year): ');
+R1 = input('Enter Operating Cost R1 (paise/kWh): ');
+
+fprintf('\n--- Plant 2 Costs ---\n');
+C2 = input('Enter Fixed Cost C2 (Rs/kW/year): ');
+R2 = input('Enter Operating Cost R2 (paise/kWh): ');
+
+%% LOAD & ENERGY CALCULATIONS
+AverageDemand = P * (LF / 100);             % in MW
+AnnualEnergy  = AverageDemand * 8760;        % in MWh/year
+
+fprintf('\n============================================================\n');
+fprintf('                    LOAD INFORMATION                        \n');
+fprintf('============================================================\n');
+fprintf('Maximum Demand  = %.2f MW\n', P);
+fprintf('Load Factor     = %.2f %%\n', LF);
+fprintf('Average Demand  = %.2f MW\n', AverageDemand);
+fprintf('Annual Energy   = %.2f MWh/year\n', AnnualEnergy);
+
+%% PLANT IDENTIFICATION & ECONOMIC CROSSOVER ANALYSIS
+% Annual Cost per kW at H operating hours:
+% Cost = C + (R / 100) * H  (since R is in paise/kWh, R/100 gives Rs/kWh)
+
+fprintf('\n============================================================\n');
+fprintf('                  ECONOMIC SELECTION                        \n');
+fprintf('============================================================\n');
+
+if (C1 < C2) && (R1 > R2)
+    % Plant 1 has lower fixed cost but higher running cost -> Peak Plant
+    peakPlant = 1;
+    basePlant = 2;
+    H = 100 * (C2 - C1) / (R1 - R2);
+
+elseif (C2 < C1) && (R2 > R1)
+    % Plant 2 has lower fixed cost but higher running cost -> Peak Plant
+    peakPlant = 2;
+    basePlant = 1;
+    H = 100 * (C1 - C2) / (R2 - R1);
+
+elseif (C1 <= C2) && (R1 <= R2)
+    % Plant 1 is cheaper or equal in BOTH fixed and running costs
+    basePlant = 1;
+    peakPlant = 2;
+    H = 0;
+    fprintf('Note: Plant 1 dominates Plant 2 in both fixed and running costs.\n');
+
+elseif (C2 <= C1) && (R2 <= R1)
+    % Plant 2 is cheaper or equal in BOTH fixed and running costs
+    basePlant = 2;
+    peakPlant = 1;
+    H = 0;
+    fprintf('Note: Plant 2 dominates Plant 2 in both fixed and running costs.\n');
+
+else
+    basePlant = NaN;
+    peakPlant = NaN;
+    H = NaN;
+end
+
+%% BOUNDARY CHECK (0 to 8760 Hours)
+if ~isnan(H)
+    if H > 8760
+        H = 8760;
+    elseif H < 0
+        H = 0;
+    end
+end
+
+%% FINAL RESULTS OUTPUT
+fprintf('\n============================================================\n');
+fprintf('                     FINAL RESULTS                          \n');
+fprintf('============================================================\n');
+if ~isnan(basePlant)
+    fprintf('Base Load Plant               = Plant %d\n', basePlant);
+    fprintf('Peak Load Plant               = Plant %d\n', peakPlant);
+    fprintf('Peak Plant Operating Hours    = %.2f hours/year\n', H);
+else
+    fprintf('Invalid cost inputs provided.\n');
+end
+fprintf('============================================================\n');  
